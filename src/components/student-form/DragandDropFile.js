@@ -1,9 +1,13 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Box, Typography, Button, CircularProgress, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, IconButton } from '@mui/material';
+import { Box, Typography, Button, CircularProgress, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, IconButton,TextField } from '@mui/material';
 import { CloudUploadOutlined, ArrowForward, TouchAppRounded, CheckCircleRounded, LoginRounded, DeleteForever, CloseRounded } from '@mui/icons-material';
 import { StudentsContext } from '../api/students';
 import { BatchContext } from '../api/batch';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 
 const DragAndDropList = ({ onDrop, fileData, fileName, fileError, setUploadManually, handleShowSnackbar, setIsLoading, loading, selectedCourse, selectedBatch, isUser, handleClose, refreshData }) => {
   const { fetchStudentsData, postBulkStudentData, deleteBulkStudentData } = useContext(StudentsContext);
@@ -15,6 +19,7 @@ const DragAndDropList = ({ onDrop, fileData, fileName, fileError, setUploadManua
   const [existData, setExistData] = useState([]);
   const [stdExists, setStdExists] = useState(false);
   const [filterData, setFilterData] = useState([]);
+  const [joiningDate, setJoiningDate] = useState(null);//This state is for date picker 
   
   useEffect(()=>{
     setIsFileError(fileError);
@@ -39,6 +44,13 @@ const DragAndDropList = ({ onDrop, fileData, fileName, fileError, setUploadManua
       getBatchData();
     }
   };
+
+  // This the function for handling date picker 
+  const handleDateChange = (newValue) => {
+    const formattedDate = dayjs(newValue).format('DD-MMM-YYYY');
+    setJoiningDate(formattedDate);
+  };
+
 
   const getBatchData = async () => {
     const batchData = await fetchBatchData(selectedCourse);
@@ -87,16 +99,16 @@ const DragAndDropList = ({ onDrop, fileData, fileName, fileError, setUploadManua
                     Phone: std_Data.Phone,
                     Course: selectedCourse,
                     BatchName: selectedBatch,
-                    Joining_Date: std_Data.JoiningDate,
+                    Joining_Date: joiningDate,
                     Personal_Info: JSON.stringify({
-                        Joining_Date: std_Data.JoiningDate,
-                        Image : std_Data.Gender === 'Male' ? '/images/Empty-Men-Icon.png' : '/images/Empty-Women-Icon.png',
+                        Joining_Date: joiningDate,
+                        Image : '/images/userAvatar.png',//std_Data.Gender === 'Male' ? '/images/Empty-Men-Icon.png' : '/images/Empty-Women-Icon.png',
                         Course: selectedCourse,
                         Name: std_Data.Name,
                         BatchName: selectedBatch,
                         Email: std_Data.Email,
                         Phone: std_Data.Phone,
-                        Gender: std_Data.Gender
+                        Gender: ""//std_Data.Gender
                     })
                 };
                 studentData.push(sendData);
@@ -213,12 +225,48 @@ const DragAndDropList = ({ onDrop, fileData, fileName, fileError, setUploadManua
       </Box>
       {(fileName && !fileError) ? (<Typography sx={{marginTop : '10px'}}><strong>Selected file: </strong> {fileName}</Typography>) : (isFileError) ? <Typography sx={{color : 'red', marginTop : '10px'}}>Upload a Valid File.</Typography> : null}
     </Box>
-    <Box className="flex w-1/3 h-10 items-center justify-around mt-10 mb-10">
+
+
+    {/* <Box className="flex w-1/3 h-10 items-center justify-around mt-10 mb-10">
     {isUser !== 'Super Admin' && <Button variant='outlined' endIcon={<ArrowForward />} onClick={()=>setUploadManually(true)}>Upload Manually</Button>}
     <Button variant='contained' startIcon={<LoginRounded sx={{transform : 'rotate(90deg)'}} />}
        onClick={handleSubmit} sx={{width : (isUser === 'Super Admin' || isUser === 'Admin') ? '100%' : '50%', height : (isUser === 'Super Admin' || isUser === 'Admin') ? '100%' : '90%'}}>Import Data
     </Button>
+    </Box> 
+    This is the original code*/}
+
+<Box className="flex w-1/3 h-10 items-center justify-around mt-10 mb-10">
+    {isUser !== 'Super Admin' && <Button variant='outlined' endIcon={<ArrowForward />} onClick={()=>setUploadManually(true)}>Upload Manually</Button>}
+    <Box className="flex justify-center items-center space-x-4">
+  {/* Button Section (Left) */}
+  <Button 
+    variant="contained" 
+    startIcon={<LoginRounded sx={{ transform: 'rotate(90deg)' }} />}
+    onClick={handleSubmit} 
+    sx={{ 
+      width: (isUser === 'Super Admin' || isUser === 'Admin') ? '100%' : '50%', 
+      height: (isUser === 'Super Admin' || isUser === 'Admin') ? '100%' : '90%' 
+    }}
+  >
+    Import Data
+  </Button>
+
+  {/* DatePicker Section (Right) */}
+  <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <DatePicker
+      label="Select Joining Date"
+      value={joiningDate ? dayjs(joiningDate, 'DD-MMM-YYYY') : null}
+      onChange={handleDateChange}
+      renderInput={(params) => <TextField {...params} />}
+    />
+  </LocalizationProvider>
+</Box>
+
+
     </Box>
+    {/* line 226 to 255 - Added Date Picker Abd adjusted Import Data and date picker side by side */}
+
+
     {(isUser === 'Super Admin' || isUser === 'Admin') &&
      <Box className='w-1/2 h-12 mt-10 flex items-center justify-evenly'>
         <Button variant='contained' color='error' sx={{width : '40%'}} onClick={()=>setDeleteStdData(true)}>Delete Student's Data</Button>
